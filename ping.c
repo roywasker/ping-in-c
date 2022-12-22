@@ -97,7 +97,7 @@ void display(void *buf, int bytes)
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable));
     if (firstmessping==0)
     {
-        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-32);
+        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28);
         firstmessping++;
     }
     printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
