@@ -21,7 +21,6 @@ struct packet
 };
 
 int pid=-1;
-int loops = 25;
 struct protoent *proto=NULL;
 
 void ping(struct sockaddr_in *addr);
@@ -33,15 +32,11 @@ unsigned short checksum(void *b, int len);
 int main(int count, char *argv[])   
 {	struct hostent *hname;
 	struct sockaddr_in addr;
-    loops = 0;
-    if ( count != 3 )
+    if ( count != 2 )
     {
-        printf("usage: %s <addr> <loops> \n", argv[0]);
+        printf("usage: %s <addr> \n", argv[0]);
         exit(0);
     }
-    if (count == 3)  // WE HAVE SPECIFIED A MESSAGE COUNT
-        loops = atoi(argv[2]);
-
 	if ( count > 1 )
 	{
 		pid = getpid();
@@ -97,16 +92,6 @@ void display(void *buf, int bytes)
     //inet_ntoa(ip->saddr)
     //inet_ntoa(ip->daddr)
     printf("%d bytes from %s: icmp_seq=%d ttl=%d time=",ip->ihl*4,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl);
-	/*printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d src=%s ",
-		ip->version, ip->ihl*4, ntohs(ip->tot_len), ip->protocol,
-		ip->ttl, sourceIPAddrReadable);
-	printf("dst=%s\n", destinationIPAddrReadable);
-	if ( icmp->un.echo.id == pid )
-	{
-		printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
-			icmp->type, icmp->code, ntohs(icmp->checksum),
-			icmp->un.echo.id, icmp->un.echo.sequence);
-	}*/
 }
 
 void listener(void)
@@ -150,13 +135,12 @@ void ping(struct sockaddr_in *addr)
 		perror("Set TTL option");
 	if ( fcntl(sd, F_SETFL, O_NONBLOCK) != 0 )
 		perror("Request nonblocking I/O");
-	for (j = 0; j < loops; j++)   // send pings 1 per second
+	while (1) // send pings 1 per second
 	{	int len=sizeof(r_addr);
 		
 		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) > 0 ){
             
         }
-		
 		bzero(&pckt, sizeof(pckt));
 		pckt.hdr.type = ICMP_ECHO;
 		pckt.hdr.un.echo.id = pid;
