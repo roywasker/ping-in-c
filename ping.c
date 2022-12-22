@@ -12,6 +12,8 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+
 
 #define PACKETSIZE	64
 struct packet
@@ -22,6 +24,9 @@ struct packet
 
 int pid=-1; // procces id
 struct protoent *proto=NULL; // pointer to protoent struct
+struct timeval start; 
+struct timeval end;
+double timer=1;
 
 void ping(struct sockaddr_in *addr);
 void listener(void);
@@ -91,7 +96,10 @@ void display(void *buf, int bytes)
 	inet_ntop(AF_INET, &ip->daddr, destinationIPAddrReadable, sizeof(destinationIPAddrReadable)); /// mybey not nesseray
     //inet_ntoa(ip->saddr)
     //inet_ntoa(ip->daddr)
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=",ip->ihl*4,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl);
+    gettimeofday(&end,0);// stop measure time
+    timer=((end.tv_sec - start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000);
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%fms",ip->ihl*4,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
+    gettimeofday(&start,0); // start measure time
 }
 
 void listener(void)
@@ -135,12 +143,14 @@ void ping(struct sockaddr_in *addr)
 		perror("Set TTL option");
 	if ( fcntl(sd, F_SETFL, O_NONBLOCK) != 0 )
 		perror("Request nonblocking I/O");
-	while (1) // send pings 1 per second
+	while (1) // send pings infinity
 	{	int len=sizeof(r_addr);
-		
+		//gettimeofday(&start,0); // start measure time
 		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) > 0 ){
             
         }
+		//gettimeofday(&end,0);// stop measure time
+        //timer=((end.tv_sec - start.tv_sec)+(end.tv_usec-start.tv_usec)*1e-6);
 		bzero(&pckt, sizeof(pckt));
 		pckt.hdr.type = ICMP_ECHO;
 		pckt.hdr.un.echo.id = pid;
