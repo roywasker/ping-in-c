@@ -88,13 +88,7 @@ void display(void *buf, int bytes)
 {	int i;
 	struct iphdr *ip = buf;
 	struct icmphdr *icmp = buf+ip->ihl*4;
-
-	printf("----------------\n");
-	for ( i = 0; i < bytes; i++ )
-	{
-		if ( !(i & 15) ) printf("\n%04X:  ", i);
-		printf("%02X ", ((unsigned char*)buf)[i]);
-	}
+    
 	printf("\n");
 	char sourceIPAddrReadable[32] = { '\0' };
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable));
@@ -102,7 +96,8 @@ void display(void *buf, int bytes)
 	inet_ntop(AF_INET, &ip->daddr, destinationIPAddrReadable, sizeof(destinationIPAddrReadable));
     //inet_ntoa(ip->saddr)
     //inet_ntoa(ip->daddr)
-	printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d src=%s ",
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=",ip->ihl*4,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl);
+	/*printf("IPv%d: hdr-size=%d pkt-size=%d protocol=%d TTL=%d src=%s ",
 		ip->version, ip->ihl*4, ntohs(ip->tot_len), ip->protocol,
 		ip->ttl, sourceIPAddrReadable);
 	printf("dst=%s\n", destinationIPAddrReadable);
@@ -111,7 +106,7 @@ void display(void *buf, int bytes)
 		printf("ICMP: type[%d/%d] checksum[%d] id[%d] seq[%d]\n",
 			icmp->type, icmp->code, ntohs(icmp->checksum),
 			icmp->un.echo.id, icmp->un.echo.sequence);
-	}
+	}*/
 }
 
 void listener(void)
@@ -141,7 +136,7 @@ void listener(void)
 
 void ping(struct sockaddr_in *addr)
 {	const int val=255;
-	int i, j, sd, cnt=1;
+	int i, j, sd, cnt=1; // cnt count seq number
 	struct packet pckt;
 	struct sockaddr_in r_addr;
 
@@ -157,9 +152,10 @@ void ping(struct sockaddr_in *addr)
 		perror("Request nonblocking I/O");
 	for (j = 0; j < loops; j++)   // send pings 1 per second
 	{	int len=sizeof(r_addr);
-		printf("Msg #%d\n", cnt);
-		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) > 0 )
-			printf("***Got message!***\n");
+		
+		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) > 0 ){
+            
+        }
 		
 		bzero(&pckt, sizeof(pckt));
 		pckt.hdr.type = ICMP_ECHO;

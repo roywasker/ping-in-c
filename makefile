@@ -1,4 +1,4 @@
-all: ping receiver
+all: ping 
 
 ping: ping.c
 	gcc -o ping ping.c
