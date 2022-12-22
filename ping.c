@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <time.h>
 #include <sys/time.h>
 
 
@@ -27,7 +28,8 @@ struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start; 
 struct timeval end;
 double timer=0;
-int bytesreceive;
+struct timespec time_start, time_end;
+int firstmessping;
 
 void ping(struct sockaddr_in *addr);
 void listener(void);
@@ -93,7 +95,12 @@ void display(void *buf, int bytes)
 	printf("\n");
 	char sourceIPAddrReadable[32] = { '\0' };
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable));
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms",bytesreceive,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
+    if (firstmessping==0)
+    {
+        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-32);
+        firstmessping++;
+    }
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
 }
 
 void listener(void)
@@ -113,9 +120,8 @@ void listener(void)
 
 		bzero(buf, sizeof(buf));
 		bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len);
-        gettimeofday(&end,0);// stop measure time
-        timer=((double)(end.tv_sec-start.tv_sec) + ((double)(end.tv_usec-start.tv_usec) / (double)10e5));
-        bytesreceive=bytes-20;//icmp hader is 20 bytes
+        clock_gettime(CLOCK_MONOTONIC, &time_end);
+        timer=((double)(time_end.tv_nsec -time_start.tv_nsec))/1000000.0;
 		if ( bytes > 0 )
 			display(buf, bytes);
 		else
@@ -157,7 +163,7 @@ void ping(struct sockaddr_in *addr)
 		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){
 			perror("sendto");
         }
-        gettimeofday(&start,0); // start measure time
+		clock_gettime(CLOCK_MONOTONIC, &time_start);
 		sleep(1);
 	}
 }
