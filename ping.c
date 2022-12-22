@@ -16,20 +16,20 @@
 #include <sys/time.h>
 
 
-#define PACKETSIZE	64
-struct packet
+#define PACKETSIZE	64 
+struct packet   //create new struct named packet
 {
-	struct icmphdr hdr;
-	char msg[PACKETSIZE-sizeof(struct icmphdr)];
+	struct icmphdr hdr;   //struct have field of icmphdr struct
+	char msg[PACKETSIZE-sizeof(struct icmphdr)]; //create string to the message
 };
 
 int pid=-1; // procces id
 struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start; 
 struct timeval end;
-double timer=0;
+double timer=0; 
 struct timespec time_start, time_end;
-int firstmessping;
+int firstmessping=0; //
 
 void ping(struct sockaddr_in *addr);
 void listener(void);
@@ -48,21 +48,18 @@ int main(int count, char *argv[])
 	if ( count > 1 )
 	{
 		pid = getpid();
-		//printf("id main process = %d\n", pid);
 		proto = getprotobyname("ICMP");
 		hname = gethostbyname(argv[1]);
 		bzero(&addr, sizeof(addr));
 		addr.sin_family = hname->h_addrtype;
 		addr.sin_port = 0;
 		addr.sin_addr.s_addr = *(long*)hname->h_addr;
-		if ( fork() == 0 )   /* child process */
+		if ( fork() == 0 )  
 		{
-			//printf("child process with pid  = %d\n", (int) getpid());
 			listener();
 		}
-		else   /* parent process */
+		else   
 		{
-			//printf("parent process with pid  = %d\n", (int) getpid());
 			ping(&addr);
 		}
 		wait(0);
@@ -92,7 +89,6 @@ void display(void *buf, int bytes)
 	struct iphdr *ip = buf;
 	struct icmphdr *icmp = buf+ip->ihl*4;
     
-	printf("\n");
 	char sourceIPAddrReadable[32] = { '\0' };
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable));
     if (firstmessping==0)
@@ -100,7 +96,7 @@ void display(void *buf, int bytes)
         printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28);
         firstmessping++;
     }
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
 }
 
 void listener(void)
@@ -108,14 +104,14 @@ void listener(void)
 	struct sockaddr_in addr;
 	unsigned char buf[1024];
 
-	sd = socket(PF_INET, SOCK_RAW, proto->p_proto);
+	sd = socket(AF_INET, SOCK_RAW, proto->p_proto);
 	if ( sd < 0 )
 	{
 		perror("socket");
 		exit(0);
 	}
-	for (;;)
-	{	
+	while (1)
+	{
 		int bytes, len=sizeof(addr);
 
 		bzero(buf, sizeof(buf));
@@ -136,15 +132,15 @@ void ping(struct sockaddr_in *addr)
 	struct packet pckt;
 	struct sockaddr_in r_addr;
 
-	sd = socket(PF_INET, SOCK_RAW, proto->p_proto);
+	sd = socket(AF_INET, SOCK_RAW, proto->p_proto);
 	if ( sd < 0 )
 	{
 		perror("socket");
 		return;
 	}
-	if ( setsockopt(sd, SOL_IP, IP_TTL, &val, sizeof(val)) != 0)
+	if (setsockopt(sd, SOL_IP, IP_TTL, &val, sizeof(val)) != 0)
 		perror("Set TTL option");
-	if ( fcntl(sd, F_SETFL, O_NONBLOCK) != 0 )
+	if (fcntl(sd, F_SETFL, O_NONBLOCK) != 0 )
 		perror("Request nonblocking I/O");
 	while (1) // send pings infinity
 	{	int len=sizeof(r_addr);
@@ -164,6 +160,6 @@ void ping(struct sockaddr_in *addr)
 			perror("sendto");
         }
 		clock_gettime(CLOCK_MONOTONIC, &time_start);
-		sleep(1);
+		sleep(1); // wait 1 second to send next ping
 	}
 }
