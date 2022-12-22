@@ -26,7 +26,8 @@ int pid=-1; // procces id
 struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start; 
 struct timeval end;
-double timer=1;
+double timer=0;
+int bytesreceive;
 
 void ping(struct sockaddr_in *addr);
 void listener(void);
@@ -92,14 +93,7 @@ void display(void *buf, int bytes)
 	printf("\n");
 	char sourceIPAddrReadable[32] = { '\0' };
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable));
-	char destinationIPAddrReadable[32] = { '\0' }; /// mybey not nesseray
-	inet_ntop(AF_INET, &ip->daddr, destinationIPAddrReadable, sizeof(destinationIPAddrReadable)); /// mybey not nesseray
-    //inet_ntoa(ip->saddr)
-    //inet_ntoa(ip->daddr)
-    gettimeofday(&end,0);// stop measure time
-    timer=((end.tv_sec - start.tv_sec)*1000+(end.tv_usec-start.tv_usec)/1000);
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%fms",ip->ihl*4,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
-    gettimeofday(&start,0); // start measure time
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms",bytesreceive,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
 }
 
 void listener(void)
@@ -119,6 +113,9 @@ void listener(void)
 
 		bzero(buf, sizeof(buf));
 		bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len);
+        gettimeofday(&end,0);// stop measure time
+        timer=((double)(end.tv_sec-start.tv_sec) + ((double)(end.tv_usec-start.tv_usec) / (double)10e5));
+        bytesreceive=bytes-20;//icmp hader is 20 bytes
 		if ( bytes > 0 )
 			display(buf, bytes);
 		else
@@ -145,12 +142,10 @@ void ping(struct sockaddr_in *addr)
 		perror("Request nonblocking I/O");
 	while (1) // send pings infinity
 	{	int len=sizeof(r_addr);
-		//gettimeofday(&start,0); // start measure time
+		
 		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) > 0 ){
             
         }
-		//gettimeofday(&end,0);// stop measure time
-        //timer=((end.tv_sec - start.tv_sec)+(end.tv_usec-start.tv_usec)*1e-6);
 		bzero(&pckt, sizeof(pckt));
 		pckt.hdr.type = ICMP_ECHO;
 		pckt.hdr.un.echo.id = pid;
@@ -159,8 +154,10 @@ void ping(struct sockaddr_in *addr)
 		pckt.msg[i] = 0;
 		pckt.hdr.un.echo.sequence = cnt++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
-		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 )
+		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){
 			perror("sendto");
+        }
+        gettimeofday(&start,0); // start measure time
 		sleep(1);
 	}
 }
