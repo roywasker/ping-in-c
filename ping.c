@@ -15,7 +15,6 @@
 #include <time.h>
 #include <sys/time.h>
 
-
 #define PACKETSIZE	64 
 struct packet   //create new struct named packet
 {
@@ -23,7 +22,7 @@ struct packet   //create new struct named packet
 	char msg[PACKETSIZE-sizeof(struct icmphdr)]; //create string to the message
 };
 
-int pid=-1; // procces id
+int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start; 
 struct timeval end;
@@ -31,36 +30,35 @@ double timer=0;
 struct timespec time_start, time_end;
 int firstmessping=0; //
 
-void ping(struct sockaddr_in *addr);
-void listener(void);
-void display(void *buf, int bytes);
 unsigned short checksum(void *b, int len);
-
+void display(void *buf, int bytes);
+void listener(void);
+void ping(struct sockaddr_in *addr);
 
 int main(int count, char *argv[])   
 {	struct hostent *hname;
 	struct sockaddr_in addr;
-    if ( count != 2 )
+    if ( count != 2 ) // check if we receive to where check connection
     {
         printf("usage: %s <addr> \n", argv[0]);
         exit(0);
     }
 	if ( count > 1 )
 	{
-		pid = getpid();
+		pid = getpid(); // get process id
 		proto = getprotobyname("ICMP");
-		hname = gethostbyname(argv[1]);
+		hname = gethostbyname(argv[1]); // insert the host ip to check connection
 		bzero(&addr, sizeof(addr));
 		addr.sin_family = hname->h_addrtype;
 		addr.sin_port = 0;
 		addr.sin_addr.s_addr = *(long*)hname->h_addr;
 		if ( fork() == 0 )  
 		{
-			listener();
+			listener(); //listen to socket
 		}
 		else   
 		{
-			ping(&addr);
+			ping(&addr); //send ping
 		}
 		wait(0);
 	}
@@ -69,7 +67,7 @@ int main(int count, char *argv[])
 	return 0;
 }
 
-unsigned short checksum(void *b, int len)
+unsigned short checksum(void *b, int len) //checksum to detection error
 {	unsigned short *buf = b;
 	unsigned int sum=0;
 	unsigned short result;
@@ -85,40 +83,40 @@ unsigned short checksum(void *b, int len)
 }
 
 void display(void *buf, int bytes)
-{	int i;
-	struct iphdr *ip = buf;
-	struct icmphdr *icmp = buf+ip->ihl*4;
+{
+	struct iphdr *ip = buf; 
+	struct icmphdr *icmp = buf+ip->ihl*4;  //pointer to iphdr struct that point to first bit after ip hader
     
-	char sourceIPAddrReadable[32] = { '\0' };
-	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable));
-    if (firstmessping==0)
+	char sourceIPAddrReadable[32] = { '\0' }; 
+	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable)); // convert the ip form bit to string
+    if (firstmessping==0) // check if it first ping message enter if yes
     {
-        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28);
+        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28); //print first message of ping 
         firstmessping++;
     }
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer);
-}
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage with seq number, ttl 
+}																																	  //and how much time its take to receive
 
 void listener(void)
-{	int sd;
-	struct sockaddr_in addr;
-	unsigned char buf[1024];
+{	
+	struct sockaddr_in addr; 
+	unsigned char buf[1024]; // buffer of 1024 char to read bytes
 
-	sd = socket(AF_INET, SOCK_RAW, proto->p_proto);
-	if ( sd < 0 )
+	int sd = socket(AF_INET, SOCK_RAW, proto->p_proto); // create a socket 
+	if ( sd < 0 ) // check if socket create successfully
 	{
 		perror("socket");
 		exit(0);
 	}
 	while (1)
 	{
-		int bytes, len=sizeof(addr);
+		int len=sizeof(addr); 
 
-		bzero(buf, sizeof(buf));
-		bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len);
-        clock_gettime(CLOCK_MONOTONIC, &time_end);
-        timer=((double)(time_end.tv_nsec -time_start.tv_nsec))/1000000.0;
-		if ( bytes > 0 )
+		bzero(buf, sizeof(buf)); // reset the buffer
+		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket 
+        clock_gettime(CLOCK_MONOTONIC, &time_end); 
+        timer=((double)(time_end.tv_nsec -time_start.tv_nsec))/1000000.0; 
+		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
 			display(buf, bytes);
 		else
 			perror("recvfrom");
@@ -128,35 +126,35 @@ void listener(void)
 
 void ping(struct sockaddr_in *addr)
 {	const int val=255;
-	int i, j, sd, cnt=1; // cnt count seq number
+	int i,j, cnt=1; // cnt count seq number
 	struct packet pckt;
 	struct sockaddr_in r_addr;
 
-	sd = socket(AF_INET, SOCK_RAW, proto->p_proto);
-	if ( sd < 0 )
+	int sd = socket(AF_INET, SOCK_RAW, proto->p_proto); //create a socket 
+	if ( sd < 0 ) // check if it first ping message enter if yes
 	{
 		perror("socket");
 		return;
 	}
-	if (setsockopt(sd, SOL_IP, IP_TTL, &val, sizeof(val)) != 0)
+	if (setsockopt(sd, SOL_IP, IP_TTL, &val, sizeof(val)) != 0) // cheack if the socket is free
 		perror("Set TTL option");
 	if (fcntl(sd, F_SETFL, O_NONBLOCK) != 0 )
 		perror("Request nonblocking I/O");
 	while (1) // send pings infinity
-	{	int len=sizeof(r_addr);
-		
-		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) > 0 ){
-            
+	{	
+		int len=sizeof(r_addr);
+		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){ // receive bytes from socket 
+            perror("recvfrom");
         }
-		bzero(&pckt, sizeof(pckt));
-		pckt.hdr.type = ICMP_ECHO;
+		bzero(&pckt, sizeof(pckt)); // reset the buffer
+		pckt.hdr.type = ICMP_ECHO; // build the hader in 6 next line
 		pckt.hdr.un.echo.id = pid;
-		for ( i = 0; i < sizeof(pckt.msg)-1; i++ )
+		for (i = 0; i < sizeof(pckt.msg)-1; i++ )
 			pckt.msg[i] = i+'0';
 		pckt.msg[i] = 0;
 		pckt.hdr.un.echo.sequence = cnt++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
-		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){
+		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){ // send the packet 
 			perror("sendto");
         }
 		clock_gettime(CLOCK_MONOTONIC, &time_start);
