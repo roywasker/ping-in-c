@@ -20,8 +20,8 @@ struct packet
 	char msg[PACKETSIZE-sizeof(struct icmphdr)];
 };
 
-int pid=-1;
-struct protoent *proto=NULL;
+int pid=-1; // procces id
+struct protoent *proto=NULL; // pointer to protoent struct
 
 void ping(struct sockaddr_in *addr);
 void listener(void);
@@ -87,8 +87,8 @@ void display(void *buf, int bytes)
 	printf("\n");
 	char sourceIPAddrReadable[32] = { '\0' };
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable));
-	char destinationIPAddrReadable[32] = { '\0' };
-	inet_ntop(AF_INET, &ip->daddr, destinationIPAddrReadable, sizeof(destinationIPAddrReadable));
+	char destinationIPAddrReadable[32] = { '\0' }; /// mybey not nesseray
+	inet_ntop(AF_INET, &ip->daddr, destinationIPAddrReadable, sizeof(destinationIPAddrReadable)); /// mybey not nesseray
     //inet_ntoa(ip->saddr)
     //inet_ntoa(ip->daddr)
     printf("%d bytes from %s: icmp_seq=%d ttl=%d time=",ip->ihl*4,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl);
