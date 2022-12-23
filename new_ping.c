@@ -199,9 +199,7 @@ void ping(struct sockaddr_in *addr)
 	while (1) // send pings infinity
 	{	
 		int len=sizeof(r_addr);
-		if (recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){ // receive bytes from socket 
-            perror("recv from");
-        }
+		if (recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){}// receive bytes from socket 
 		bzero(&pckt, sizeof(pckt)); // reset the buffer
 		pckt.hdr.type = ICMP_ECHO; // build the hader in 6 next line
 		pckt.hdr.un.echo.id = pid;
