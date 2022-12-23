@@ -16,7 +16,7 @@
 #include <time.h>
 #include <sys/time.h>
 
-#define PORT 9999
+#define PORT 3000
 #define SERVER_IP_ADDRESS "0.0.0.0"
 #define PACKETSIZE	64 
 struct packet   //create new struct named packet
@@ -63,7 +63,7 @@ int main(int count, char *argv[])
 
     if (connect(sock, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) == -1) // Make a connection to the receiver with socket
     {
-        printf("connect failed with error code : %d", errno);
+        printf("connect failed with error code : %d\n", errno);
     }
 
     printf("connected to server\n\n");
