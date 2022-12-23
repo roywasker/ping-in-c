@@ -89,7 +89,7 @@ int main()
 			int i; //"connected to 8.8.8.8 succesfully"
 			for ( i = 0; i < 16; i++)
 			{
-				if (buffer[12+i]==" ")
+				if (&buffer[12+i]==" ")
 				{
 					break;
 				}

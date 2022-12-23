@@ -24,8 +24,8 @@ struct packet   //create new struct named packet
 
 int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
-struct timeval start , end; 
-double timer=0; 
+double timer=0,perveos=0; 
+clock_t start_t, end_t;
 int firstmessping=0; //
 
 unsigned short checksum(void *b, int len);
@@ -84,15 +84,15 @@ void display(void *buf, int bytes)
 {
 	struct iphdr *ip = buf; 
 	struct icmphdr *icmp = buf+ip->ihl*4;  //pointer to iphdr struct that point to first bit after ip hader
-    
+    int iphader=20 ,icmphader=8;
 	char sourceIPAddrReadable[32] = { '\0' }; 
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable)); // convert the ip form bit to string
     if (firstmessping==0) // check if it first ping message enter if yes
     {
-        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28); //print first message of ping 
+        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-iphader-icmphader); //print first message of ping 
         firstmessping++;
     }
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage with seq number, ttl 
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-iphader,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage with seq number, ttl 
 }																																	  //and how much time its take to receive
 
 void listener(void)
@@ -110,12 +110,11 @@ void listener(void)
 	{
 		int len=sizeof(addr); 
 		bzero(buf, sizeof(buf)); // reset the buffer
-		gettimeofday(&start,0);
 		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket
-		gettimeofday(&end, 0);
-		long seconds = (end.tv_sec-start.tv_sec);
-    	long microseconds = end.tv_usec - start.tv_usec;
-		timer=(seconds)*1000+(microseconds)*1e-4;
+		end_t = clock();
+		timer=((double)(end_t - start_t) / 100 );
+		timer-=perveos;
+		perveos+=timer;
 		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
 			display(buf, bytes);
 		else
@@ -143,9 +142,7 @@ void ping(struct sockaddr_in *addr)
 	while (1) // send pings infinity
 	{	
 		int len=sizeof(r_addr);
-		if (recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){ // receive bytes from socket 
-            perror("recv from");
-        }
+		if (recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){} // receive bytes from socket 
 		bzero(&pckt, sizeof(pckt)); // reset the buffer
 		pckt.hdr.type = ICMP_ECHO; // build the hader in 6 next line
 		pckt.hdr.un.echo.id = pid;
@@ -154,6 +151,7 @@ void ping(struct sockaddr_in *addr)
 		pckt.msg[i] = 0;
 		pckt.hdr.un.echo.sequence = cnt++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
+		start_t = clock();
 		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){ // send the packet 
 			perror("sendto");
         }
