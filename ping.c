@@ -24,13 +24,9 @@ struct packet   //create new struct named packet
 
 int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
-struct timeval start; 
-struct timeval end;
+struct timeval start , end; 
 double timer=0; 
-struct timespec time_start, time_end;
 int firstmessping=0; //
-float milliseconds;
-unsigned long microseconds;
 
 unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
@@ -96,7 +92,7 @@ void display(void *buf, int bytes)
         printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28); //print first message of ping 
         firstmessping++;
     }
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,milliseconds); //print ping massage with seq number, ttl 
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage with seq number, ttl 
 }																																	  //and how much time its take to receive
 
 void listener(void)
@@ -113,15 +109,9 @@ void listener(void)
 	while (1)
 	{
 		int len=sizeof(addr); 
-
 		bzero(buf, sizeof(buf)); // reset the buffer
 		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket
-		gettimeofday(&end, 0); 
-        clock_gettime(CLOCK_MONOTONIC, &time_end); 
-        timer=((double)(time_end.tv_nsec -time_start.tv_nsec))/1000000.0;
-		milliseconds = (end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec) / 1000.0f;
-    	microseconds = (end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec);
-    	//printf("\nRTT: %f milliseconds (%ld microseconds)\n", milliseconds, microseconds);
+		gettimeofday(&end, 0);
 		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
 			display(buf, bytes);
 		else
@@ -149,7 +139,7 @@ void ping(struct sockaddr_in *addr)
 	while (1) // send pings infinity
 	{	
 		int len=sizeof(r_addr);
-		if ( recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){ // receive bytes from socket 
+		if (recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){ // receive bytes from socket 
             perror("recvfrom");
         }
 		bzero(&pckt, sizeof(pckt)); // reset the buffer
@@ -160,11 +150,10 @@ void ping(struct sockaddr_in *addr)
 		pckt.msg[i] = 0;
 		pckt.hdr.un.echo.sequence = cnt++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
+		gettimeofday(&start, 0);
 		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){ // send the packet 
 			perror("sendto");
         }
-		gettimeofday(&start, 0);
-		clock_gettime(CLOCK_MONOTONIC, &time_start);
 		sleep(1); // wait 1 second to send next ping
 	}
 }
