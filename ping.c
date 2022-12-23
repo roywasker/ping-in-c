@@ -110,8 +110,12 @@ void listener(void)
 	{
 		int len=sizeof(addr); 
 		bzero(buf, sizeof(buf)); // reset the buffer
+		gettimeofday(&start,0);
 		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket
 		gettimeofday(&end, 0);
+		long seconds = (end.tv_sec-start.tv_sec);
+    	long microseconds = end.tv_usec - start.tv_usec;
+		timer=(seconds)*1000+(microseconds)*1e-6;
 		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
 			display(buf, bytes);
 		else
@@ -150,7 +154,6 @@ void ping(struct sockaddr_in *addr)
 		pckt.msg[i] = 0;
 		pckt.hdr.un.echo.sequence = cnt++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
-		gettimeofday(&start, 0);
 		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){ // send the packet 
 			perror("sendto");
         }
