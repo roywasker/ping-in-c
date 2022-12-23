@@ -144,7 +144,7 @@ void ping(struct sockaddr_in *addr)
 	{	
 		int len=sizeof(r_addr);
 		if (recvfrom(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)&r_addr, &len) < 0 ){ // receive bytes from socket 
-            perror("recvfrom");
+            perror("recv from");
         }
 		bzero(&pckt, sizeof(pckt)); // reset the buffer
 		pckt.hdr.type = ICMP_ECHO; // build the hader in 6 next line
