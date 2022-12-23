@@ -30,6 +30,7 @@ unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
 void listener(int sock);
 void ping(struct sockaddr_in *addr);
+void checktimeout(sock);
 
 int main(int count, char *argv[])
 {
@@ -165,6 +166,7 @@ void listener(int sock)
 			display(buf, bytes);
      		int messageLen = strlen(message) + 1;
      		int bytesSent = send(sock, message, messageLen, 0);
+            checktimeout(sock);
         }
 		else
 			perror("recvfrom");
@@ -207,4 +209,13 @@ void ping(struct sockaddr_in *addr)
         }
 		sleep(1); // wait 1 second to send next ping
 	}
+}
+void checktimeout(sock){
+    char buffer[1024];
+    int MessRecv = recv(sock, buffer, sizeof(buffer), 0); // receive the message 
+    if (strcmp(buffer, "time out") == 0) 
+    {
+        close(sock);
+        exit(0);
+    }
 }

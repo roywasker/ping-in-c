@@ -105,6 +105,7 @@ int main()
      		int bytesSent = send(ClientSocket, message, messageLen, 0);
 			break;
         }
+		int bytesSent = send(ClientSocket, "time is good\n", 14, 0);
     }
 	printf("server <%s> cannot be reached.",ip);
     close(ClientSocket);
