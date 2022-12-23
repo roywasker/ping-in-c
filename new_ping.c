@@ -1,14 +1,19 @@
-#include <stdio.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <time.h>
+#include <fcntl.h>
 #include <errno.h>
-#include <string.h>
+#include <sys/socket.h>
+#include <resolv.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/ip_icmp.h>
+#include <arpa/inet.h>
+#include <stdlib.h>
+#include <strings.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <sys/time.h>
 
 #define PORT 9999
 #define SERVER_IP_ADDRESS "0.0.0.0"
@@ -129,15 +134,15 @@ void display(void *buf, int bytes)
 {
 	struct iphdr *ip = buf; 
 	struct icmphdr *icmp = buf+ip->ihl*4;  //pointer to iphdr struct that point to first bit after ip hader
-    
+    int iphader=20 ,icmphader=8;
 	char sourceIPAddrReadable[32] = { '\0' }; 
 	inet_ntop(AF_INET, &ip->saddr, sourceIPAddrReadable, sizeof(sourceIPAddrReadable)); // convert the ip form bit to string
     if (firstmessping==0) // check if it first ping message enter if yes
     {
-        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28); //print first message of ping 
+        printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-iphader-icmphader); //print first message of ping 
         firstmessping++;
     }
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage 
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-iphader,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage 
     strcat(message, sourceIPAddrReadable); // add the ip to message
     strcat(message," succesfully");
 }																																	 
