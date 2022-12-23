@@ -24,6 +24,7 @@ struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start , end; 
 double timer=0; 
 int firstmessping=0; //
+char message[45]="connected to ";
 
 unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
@@ -134,8 +135,10 @@ void display(void *buf, int bytes)
         printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-28); //print first message of ping 
         firstmessping++;
     }
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage with seq number, ttl 
-}																																	  //and how much time its take to receive
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-20,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage 
+    strcat(message, sourceIPAddrReadable); // add the ip to message
+    strcat(message," succesfully");
+}																																	 
 
 void listener(int sock)
 {	
@@ -160,7 +163,6 @@ void listener(int sock)
 		timer=(seconds)*1000+(microseconds)*1e-4;
 		if ( bytes > 0 ){ // if we get 1 or more bytes send to  display that print it
 			display(buf, bytes);
-            char message[] = "connected to 8.8.8.8 succesfully\n";
      		int messageLen = strlen(message) + 1;
      		int bytesSent = send(sock, message, messageLen, 0);
         }
