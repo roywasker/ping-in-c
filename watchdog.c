@@ -12,6 +12,7 @@
 
 #define SERVER_PORT 3000
 struct timeval start, end;
+char ip[17]={'\0'};  // 3dig.3did.3dig.3did + \n
 
 int main()
 {
@@ -81,15 +82,31 @@ int main()
 			BytesReceived += MessRecv; // add the number of byte that arrive from sender
 			BytesLeft -= MessRecv; // subtraction the number of byte that left to receive
 		}
+		if ((strlen)==0)
+		{
+			int i; //"connected to 8.8.8.8 succesfully"
+			for ( i = 0; i < 16; i++)
+			{
+				if (buffer[12+i]==" ")
+				{
+					break;
+				}
+				ip[i]=buffer[12+i];
+			}
+			ip[i]='\0';
+		}
         gettimeofday(&end,0); // stop measure time
         double timer=(end.tv_sec - start.tv_sec)+(end.tv_usec-start.tv_usec)*1e-6;
         gettimeofday(&start,0); // stop measure time
         if (timer>10)
         {
-            send("timeout");
+        	char message[] = "Time out\n";
+     		int messageLen = strlen(message) + 1;
+     		int bytesSent = send(ClientSocket, message, messageLen, 0);
+			break;
         }
-        
     }
+	printf("server <%s> cannot be reached.",ip);
     close(ClientSocket);
     return 0;
 }
