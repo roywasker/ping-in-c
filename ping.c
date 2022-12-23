@@ -115,7 +115,7 @@ void listener(void)
 		gettimeofday(&end, 0);
 		long seconds = (end.tv_sec-start.tv_sec);
     	long microseconds = end.tv_usec - start.tv_usec;
-		timer=(seconds)*1000+(microseconds)*1e-6;
+		timer=(seconds)*1000+(microseconds)*1e-4;
 		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
 			display(buf, bytes);
 		else
