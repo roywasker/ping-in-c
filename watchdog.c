@@ -2,13 +2,13 @@
 
 int main()
 {
-    printf("hello partb");
+    /*printf("hello partb");
     while (timer < 10seconds)
     {
         recv();
         timer = 0seconds;
     }
-    send("timeout")
+    send("timeout");
 
-        return 0;
+        return 0;*/
 }

@@ -6,7 +6,7 @@
 // command: make clean && make all && ./partb
 int main()
 {
-    char *args[2];
+    /*char *args[2];
     // compiled watchdog.c by makefile
     args[0] = "./watchdog";
     args[1] = NULL;
@@ -19,5 +19,5 @@ int main()
     }
     wait(&status); // waiting for child to finish before exiting
     printf("child exit status is: %d", status);
-    return 0;
+    return 0;*/
 }
