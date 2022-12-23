@@ -30,7 +30,7 @@ struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start , end; 
 double timer=0; 
 int firstmessping=0; //
-char message[45]="connected to ";
+char message[45]={0};
 
 unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
@@ -143,7 +143,9 @@ void display(void *buf, int bytes)
         printf("PING %s(%s) %d bytes of data\n",sourceIPAddrReadable,sourceIPAddrReadable,bytes-iphader-icmphader); //print first message of ping 
         firstmessping++;
     }
-    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-iphader,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage 
+    printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-iphader,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage
+	memset(&message, 0, sizeof(message));
+	strcat(message,"connected to "); 
     strcat(message, sourceIPAddrReadable); // add the ip to message
     strcat(message," succesfully");
 }																																	 

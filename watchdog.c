@@ -9,12 +9,15 @@
 #include <arpa/inet.h>
 #include <sys/types.h> 
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #define SERVER_PORT 3000
 struct timeval start, end;
 char ip[17]={'\0'};  // 3dig.3did.3dig.3did + \n
+char buffer[1024]={0};
 
 void checktimer(int socket);
+void listener(int ClientSocket);
 int main()
 {
     int listenSocket = -1; // create listening socket
@@ -71,18 +74,50 @@ int main()
 	}
 
 	printf("A new client connection accepted\n\n");
-	checktimer(ClientSocket);
-    while (1)
+	if ( fork() == 0 )  
+	{
+		checktimer(ClientSocket);
+	}
+	else   
+	{
+		listener(ClientSocket);
+	}
+	wait(0);
+    return 0;
+}
+void checktimer(int socket){
+	while (1)
+	{
+		gettimeofday(&end, 0); // stop measure time
+		double timer = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) * 1e-6;
+		printf("timer is %ld",start.tv_sec);
+		if (timer > 10)
+		{
+			char message[] = "Time out\n";
+			int messageLen = strlen(message) + 1;
+			int bytesSent = send(socket, message, messageLen, 0);
+			break;
+		}
+		printf("timer is %f",timer);
+		int bytesSent = send(socket, "time is good\n", 14, 0);
+	}
+	printf("server <%s> cannot be reached.\n", ip);
+	close(socket);
+	exit(0);
+}
+void listener(int ClientSocket){
+	while (1)
     {
         int BytesLeft = 5; // intialize how much byte left to received
-		char buffer[1024];
+		memset(&buffer, 0, sizeof(buffer));
 		int BytesReceived = 0;// countig how much byte received from sender
 		while (BytesReceived < 5)
 		{
-			int MessRecv = recv(ClientSocket, buffer, BytesLeft, 0); // receive the message 
+			int MessRecv = recv(ClientSocket, buffer, sizeof(buffer), 0); // receive the message 
 			BytesReceived += MessRecv; // add the number of byte that arrive from sender
 			BytesLeft -= MessRecv; // subtraction the number of byte that left to receive
 		}
+		printf("buffer is %s\n",buffer);
 		gettimeofday(&start,0); // stop measure time
 		if ((strlen)==0)
 		{
@@ -98,23 +133,4 @@ int main()
 			ip[i]='\0';
 		}
     }
-    return 0;
-}
-void checktimer(int socket){
-	while (1)
-	{
-		gettimeofday(&end, 0); // stop measure time
-		double timer = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) * 1e-6;
-		if (timer > 10)
-		{
-			char message[] = "Time out\n";
-			int messageLen = strlen(message) + 1;
-			int bytesSent = send(socket, message, messageLen, 0);
-			break;
-		}
-		int bytesSent = send(socket, "time is good\n", 14, 0);
-	}
-	printf("server <%s> cannot be reached.\n", ip);
-	close(socket);
-	exit(0);
 }
