@@ -80,6 +80,7 @@ int main(int count, char *argv[])
 		if ( fork() == 0 )  
 		{
 			listener(sock); //listen to socket
+			checktimeout(sock);
 		}
 		else   
 		{
@@ -166,7 +167,6 @@ void listener(int sock)
 			display(buf, bytes);
      		int messageLen = strlen(message) + 1;
      		int bytesSent = send(sock, message, messageLen, 0);
-            checktimeout(sock);
         }
 		else
 			perror("recvfrom");
@@ -211,11 +211,14 @@ void ping(struct sockaddr_in *addr)
 	}
 }
 void checktimeout(sock){
-    char buffer[1024];
-    int MessRecv = recv(sock, buffer, sizeof(buffer), 0); // receive the message 
-    if (strcmp(buffer, "time out") == 0) 
-    {
-        close(sock);
-        exit(0);
-    }
+	while (1)
+	{
+		char buffer[1024];
+		int MessRecv = recv(sock, buffer, sizeof(buffer), 0); // receive the message
+		if (strcmp(buffer, "time out") == 0)
+		{
+			close(sock);
+			exit(0);
+		}
+	}
 }

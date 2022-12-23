@@ -14,6 +14,7 @@
 struct timeval start, end;
 char ip[17]={'\0'};  // 3dig.3did.3dig.3did + \n
 
+void checktimer(int socket);
 int main()
 {
     int listenSocket = -1; // create listening socket
@@ -70,7 +71,7 @@ int main()
 	}
 
 	printf("A new client connection accepted\n\n");
-
+	checktimer(ClientSocket);
     while (1)
     {
         int BytesLeft = 5; // intialize how much byte left to received
@@ -82,6 +83,7 @@ int main()
 			BytesReceived += MessRecv; // add the number of byte that arrive from sender
 			BytesLeft -= MessRecv; // subtraction the number of byte that left to receive
 		}
+		gettimeofday(&start,0); // stop measure time
 		if ((strlen)==0)
 		{
 			int i; //"connected to 8.8.8.8 succesfully"
@@ -95,19 +97,24 @@ int main()
 			}
 			ip[i]='\0';
 		}
-        gettimeofday(&end,0); // stop measure time
-        double timer=(end.tv_sec - start.tv_sec)+(end.tv_usec-start.tv_usec)*1e-6;
-        gettimeofday(&start,0); // stop measure time
-        if (timer>10)
-        {
-        	char message[] = "Time out\n";
-     		int messageLen = strlen(message) + 1;
-     		int bytesSent = send(ClientSocket, message, messageLen, 0);
-			break;
-        }
-		int bytesSent = send(ClientSocket, "time is good\n", 14, 0);
     }
-	printf("server <%s> cannot be reached.",ip);
-    close(ClientSocket);
     return 0;
+}
+void checktimer(int socket){
+	while (1)
+	{
+		gettimeofday(&end, 0); // stop measure time
+		double timer = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) * 1e-6;
+		if (timer > 10)
+		{
+			char message[] = "Time out\n";
+			int messageLen = strlen(message) + 1;
+			int bytesSent = send(socket, message, messageLen, 0);
+			break;
+		}
+		int bytesSent = send(socket, "time is good\n", 14, 0);
+	}
+	printf("server <%s> cannot be reached.\n", ip);
+	close(socket);
+	exit(0);
 }
