@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <resolv.h>
 #include <netdb.h>
+#include <string.h>
 #include <netinet/in.h>
 #include <netinet/ip_icmp.h>
 #include <arpa/inet.h>
@@ -35,7 +36,7 @@ unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
 void listener(int sock);
 void ping(struct sockaddr_in *addr);
-void checktimeout(sock);
+void checktimeout(int sock);
 
 int main(int count, char *argv[])
 {
@@ -215,7 +216,7 @@ void ping(struct sockaddr_in *addr)
 		sleep(1); // wait 1 second to send next ping
 	}
 }
-void checktimeout(sock){
+void checktimeout(int sock){
 	while (1)
 	{
 		char buffer[1024];

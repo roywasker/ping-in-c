@@ -1,4 +1,4 @@
-all: ping watchdog #new_ping
+all: ping watchdog new_ping
 ping: ping.c
 	gcc ping.c -o parta
 watchdog: watchdog.c
