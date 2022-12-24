@@ -10,14 +10,17 @@
 #include <sys/types.h> 
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <signal.h>
+#include <pthread.h>
 
 #define SERVER_PORT 3000
-struct timeval start, end;
 char ip[17]={'\0'};  // 3dig.3did.3dig.3did + \n
 char buffer[1024]={0};
+int ClientSocket;
 
-void checktimer(int socket);
 void listener(int ClientSocket);
+void signal_handler(int signum);
+
 int main()
 {
     int listenSocket = -1; // create listening socket
@@ -66,7 +69,7 @@ int main()
 	socklen_t clientAddressLen = sizeof(ClientAddress);
 	memset(&ClientAddress, 0, sizeof(ClientAddress)); // file struct with 0
 
-	int ClientSocket = accept(listenSocket, (struct sockaddr *)&ClientAddress, &clientAddressLen); // create socket to sender
+	ClientSocket = accept(listenSocket, (struct sockaddr *)&ClientAddress, &clientAddressLen); // create socket to sender
 	if (ClientSocket == -1)
 	{
 		printf("listen failed with error code : %d", errno);
@@ -74,42 +77,16 @@ int main()
 	}
 
 	printf("A new client connection accepted\n\n");
-	if ( fork() == 0 )  
-	{
-		checktimer(ClientSocket);
-	}
-	else   
-	{
-		listener(ClientSocket);
-	}
-	wait(0);
+	signal(SIGALRM, signal_handler);
+	listener(ClientSocket);
     return 0;
-}
-void checktimer(int socket){
-	while (1)
-	{
-		gettimeofday(&end, 0); // stop measure time
-		double timer = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) * 1e-6;
-		printf("timer is %ld",start.tv_sec);
-		if (timer > 10)
-		{
-			char message[] = "Time out\n";
-			int messageLen = strlen(message) + 1;
-			int bytesSent = send(socket, message, messageLen, 0);
-			break;
-		}
-		printf("timer is %f",timer);
-		int bytesSent = send(socket, "time is good\n", 14, 0);
-	}
-	printf("server <%s> cannot be reached.\n", ip);
-	close(socket);
-	exit(0);
 }
 void listener(int ClientSocket){
 	while (1)
     {
         int BytesLeft = 5; // intialize how much byte left to received
 		memset(&buffer, 0, sizeof(buffer));
+		alarm(10);
 		int BytesReceived = 0;// countig how much byte received from sender
 		while (BytesReceived < 5)
 		{
@@ -117,7 +94,17 @@ void listener(int ClientSocket){
 			BytesReceived += MessRecv; // add the number of byte that arrive from sender
 			BytesLeft -= MessRecv; // subtraction the number of byte that left to receive
 		}
-		gettimeofday(&start,0); // stop measure time
+		printf("%s\n",buffer);
 		strncpy(ip,buffer+13,strlen(buffer)-12-13);
     }
+}
+void signal_handler(int signum)
+{
+    char message[] = "Time out\n";
+	int messageLen = strlen(message) + 1;
+	int bytesSent = send(ClientSocket, message, messageLen, 0);
+    printf("\nserver <%s> cannot be reached.\n", ip);
+	printf("close soket\n");
+	close(ClientSocket);
+    exit(0);
 }
