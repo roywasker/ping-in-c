@@ -8,10 +8,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/types.h> 
-#include <sys/time.h>
-#include <sys/wait.h>
 #include <signal.h>
-#include <pthread.h>
 
 #define SERVER_PORT 3000
 char ip[17]={'\0'};  // 3dig.3did.3dig.3did + \n
