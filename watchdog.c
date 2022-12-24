@@ -97,7 +97,7 @@ void listener(int ClientSocket){
 }
 void signal_handler(int signum)
 {
-    char message[] = "Time out\n";
+    char message[] = "Time out";
 	int messageLen = strlen(message) + 1;
 	int bytesSent = send(ClientSocket, message, messageLen, 0);
     printf("\nserver <%s> cannot be reached.\n", ip);

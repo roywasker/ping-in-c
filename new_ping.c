@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <sys/time.h>
+#include <signal.h>
 
 #define PORT 3000
 #define SERVER_IP_ADDRESS "0.0.0.0"
@@ -31,18 +32,20 @@ struct timeval start , end;
 double timer=0; 
 int firstmessping=0; //
 char message[45]={0};
+int sock;
 
 unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
 void listener(int sock);
 void ping(struct sockaddr_in *addr);
-void checktimeout(int sock);
+int checktimeout();
+void signal_handler(int signum);
 
 int main(int count, char *argv[])
 {
     struct hostent *hname;
 	struct sockaddr_in addr;
-    int sock = socket(AF_INET, SOCK_STREAM, 0); // create socket
+    sock = socket(AF_INET, SOCK_STREAM, 0); // create socket
     if (sock == -1)
     {
         printf("Unable to create a socket : %d", errno);
@@ -68,7 +71,8 @@ int main(int count, char *argv[])
 
     printf("connected to server\n\n");
 
-   
+	signal(SIGALRM, signal_handler);
+
     if ( count != 2 ) // check if we receive to where check connection
     {
         printf("usage: %s <addr> \n", argv[0]);
@@ -86,7 +90,6 @@ int main(int count, char *argv[])
 		if ( fork() == 0 )  
 		{
 			listener(sock); //listen to socket
-			checktimeout(sock);
 		}
 		else   
 		{
@@ -97,8 +100,7 @@ int main(int count, char *argv[])
 	else
 		printf("usage: myping <hostname>\n");
 
-
-    char *args[2];
+    /*char *args[2];
     // compiled watchdog.c by makefile
     args[0] = "./watchdog";
     args[1] = NULL;
@@ -110,9 +112,7 @@ int main(int count, char *argv[])
         execvp(args[0], args);
     }
     wait(&status); // waiting for child to finish before exiting
-    printf("child exit status is: %d", status);
-
-
+    printf("child exit status is: %d", status);*/
 
     return 0;
 }
@@ -167,6 +167,7 @@ void listener(int sock)
 		bzero(buf, sizeof(buf)); // reset the buffer
 		gettimeofday(&start,0);
 		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket
+		alarm(9);
 		gettimeofday(&end, 0);
 		long seconds = (end.tv_sec-start.tv_sec);
     	long microseconds = end.tv_usec - start.tv_usec;
@@ -216,15 +217,22 @@ void ping(struct sockaddr_in *addr)
 		sleep(1); // wait 1 second to send next ping
 	}
 }
-void checktimeout(int sock){
-	while (1)
+int checktimeout(){
+	char buffer[1024];
+	int MessRecv = recv(sock, buffer, sizeof(buffer), 0); // receive the message
+	if (strcmp(buffer, "Time out") == 0)
 	{
-		char buffer[1024];
-		int MessRecv = recv(sock, buffer, sizeof(buffer), 0); // receive the message
-		if (strcmp(buffer, "time out") == 0)
-		{
-			close(sock);
-			exit(0);
-		}
+		printf("\nTime out\nclose socket\n");
+		close(sock);
+		return 0;
+	}
+	return 1;
+}
+void signal_handler(int signum)
+{
+    int result = checktimeout();
+	if (result==0)
+	{
+    	exit(0);
 	}
 }
