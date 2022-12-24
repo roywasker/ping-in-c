@@ -117,20 +117,7 @@ void listener(int ClientSocket){
 			BytesReceived += MessRecv; // add the number of byte that arrive from sender
 			BytesLeft -= MessRecv; // subtraction the number of byte that left to receive
 		}
-		printf("buffer is %s\n",buffer);
 		gettimeofday(&start,0); // stop measure time
-		if ((strlen)==0)
-		{
-			int i; //"connected to 8.8.8.8 succesfully"
-			for ( i = 0; i < 16; i++)
-			{
-				if (&buffer[12+i]==" ")
-				{
-					break;
-				}
-				ip[i]=buffer[12+i];
-			}
-			ip[i]='\0';
-		}
+		strncpy(ip,buffer+13,strlen(buffer)-12-13);
     }
 }
