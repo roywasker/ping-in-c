@@ -231,8 +231,9 @@ int checktimeout(){
 void signal_handler(int signum)
 {
     int result = checktimeout();
-	if (result==0)
+	if (result!=0)
 	{
-    	exit(0);
+    	return;
 	}
+	exit(0);
 }
