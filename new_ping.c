@@ -13,7 +13,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <sys/time.h>
 #include <signal.h>
 
@@ -78,7 +77,7 @@ int main(int count, char *argv[])
         printf("usage: %s <addr> \n", argv[0]);
         exit(0);
     }
-	if ( count > 1 )
+	if ( count == 2)
 	{
 		pid = getpid(); // get process id
 		proto = getprotobyname("ICMP");
@@ -98,7 +97,7 @@ int main(int count, char *argv[])
 		wait(0);
 	}
 	else
-		printf("usage: myping <hostname>\n");
+		printf("usage: ping <hostname>\n");
 
     /*char *args[2];
     // compiled watchdog.c by makefile
@@ -185,7 +184,7 @@ void listener(int sock)
 
 void ping(struct sockaddr_in *addr)
 {	const int val=255;
-	int i,j, cnt=1; // cnt count seq number
+	int i,cnt=1; // cnt count seq number
 	struct packet pckt;
 	struct sockaddr_in r_addr;
 

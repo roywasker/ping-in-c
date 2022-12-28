@@ -124,7 +124,7 @@ void listener(void)
 
 void ping(struct sockaddr_in *addr)
 {	const int val=255;
-	int i,j, cnt=1; // cnt count seq number
+	int i, cnt=1; // cnt count seq number
 	struct packet pckt;
 	struct sockaddr_in r_addr;
 
