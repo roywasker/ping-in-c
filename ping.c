@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <time.h>
 #include <sys/time.h>
 
 #define PACKETSIZE	64 
@@ -24,9 +23,8 @@ struct packet   //create new struct named packet
 
 int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
-double timer=0,perveos=0; 
-clock_t start_t, end_t;
-int firstmessping=0; //
+double timer=0; 
+int firstmessping=0; //get value 1 when first message of ping arrive
 
 unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
@@ -41,7 +39,7 @@ int main(int count, char *argv[])
         printf("usage: %s <addr> \n", argv[0]);
         exit(0);
     }
-	if ( count > 1 )
+	if ( count == 2 )
 	{
 		pid = getpid(); // get process id
 		proto = getprotobyname("ICMP");
@@ -61,7 +59,7 @@ int main(int count, char *argv[])
 		wait(0);
 	}
 	else
-		printf("usage: myping <hostname>\n");
+		printf("usage: ping <hostname>\n");
 	return 0;
 }
 
@@ -110,15 +108,12 @@ void listener(void)
 	{
 		int len=sizeof(addr); 
 		bzero(buf, sizeof(buf)); // reset the buffer
-		start_t = clock();
-		/*struct timeval start; 
-		gettimeofday(&start,0); // start measure time*/
+		struct timeval start; 
+		gettimeofday(&start,0); // start measure time
 		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket
-		end_t = clock();
-		/*struct timeval end; 
+		struct timeval end; 
 		gettimeofday(&end,0); // start measure time
-		//timer=(end.tv_sec - start.tv_sec)+(end.tv_usec-start.tv_usec)*1e-6;*/
-		timer=((double)(end_t - start_t) / 100 );
+		timer=(end.tv_sec - start.tv_sec)+(end.tv_usec-start.tv_usec)*1e-6;
 		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
 			display(buf, bytes);
 		else

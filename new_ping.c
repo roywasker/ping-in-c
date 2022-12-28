@@ -30,7 +30,7 @@ int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start , end; 
 double timer=0; 
-int firstmessping=0; //
+int firstmessping=0; //get value 1 when first message of ping arrive
 char message[45]={0};
 int sock;
 
