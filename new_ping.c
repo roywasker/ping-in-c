@@ -27,7 +27,6 @@ struct packet   //create new struct named packet
 
 int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
-struct timeval start , end; 
 double timer=0; 
 struct timeval start;
 int firstmessping=0; //get value 1 when first message of ping arrive
@@ -132,39 +131,34 @@ void display(void *buf, int bytes)
 	strcat(message,"connected to "); 
     strcat(message, sourceIPAddrReadable); // add the ip to message
     strcat(message," succesfully");
-}																																	 
+}
 
 void listener(int sock)
-{	
-	struct sockaddr_in addr; 
+{
+	struct sockaddr_in addr;
 	unsigned char buf[1024]; // buffer of 1024 char to read bytes
 
-	int sd = socket(AF_INET, SOCK_RAW, proto->p_proto); // create a socket 
-	if ( sd < 0 ) // check if socket create successfully
+	int sd = socket(AF_INET, SOCK_RAW, proto->p_proto); // create a socket
+	if (sd < 0)											// check if socket create successfully
 	{
 		perror("socket");
 		exit(0);
 	}
-	while (1)
-	{
-		int len=sizeof(addr); 
-		bzero(buf, sizeof(buf)); // reset the buffer
-		gettimeofday(&start,0);
-		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket
-		alarm(9);
-		gettimeofday(&end, 0);
-		long seconds = (end.tv_sec-start.tv_sec);
-    	long microseconds = end.tv_usec - start.tv_usec;
-		timer=(seconds)*1000+(microseconds)*1e-4;
-		if ( bytes > 0 ){ // if we get 1 or more bytes send to  display that print it
-			display(buf, bytes);
-     		int messageLen = strlen(message) + 1;
-     		int bytesSent = send(sock, message, messageLen, 0);
-        }
-		else
-			perror("recvfrom");
+	int len = sizeof(addr);
+	bzero(buf, sizeof(buf)); // reset the buffer
+	int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &len); // receive bytes from socket
+	alarm(9);
+	struct timeval end;
+	gettimeofday(&end, 0); // start measure time
+	timer=(end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec) / 1000.0;
+	if (bytes > 0)
+	{ // if we get 1 or more bytes send to  display that print it
+		display(buf, bytes);
+		int messageLen = strlen(message) + 1;
+		int bytesSent = send(sock, message, messageLen, 0);
 	}
-	exit(0);
+	else
+		perror("recvfrom");
 }
 
 void ping(struct sockaddr_in *addr)
@@ -195,9 +189,11 @@ void ping(struct sockaddr_in *addr)
 		pckt.msg[i] = 0;
 		pckt.hdr.un.echo.sequence = cnt++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
+		gettimeofday(&start,0); // start measure time
 		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){ // send the packet 
 			perror("sendto");
         }
+		listener(sock);
 		sleep(1); // wait 1 second to send next ping
 	}
 }
