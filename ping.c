@@ -103,9 +103,7 @@ void listener(void)
 		exit(0);
 	}
 	int len = sizeof(addr);
-	bzero(buf, sizeof(buf)); // reset the buffer
-	struct timeval start;
-	gettimeofday(&start, 0);													   // start measure time
+	bzero(buf, sizeof(buf)); // reset the buffer													   // start measure time
 	int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr *)&addr, &len); // receive bytes from socket
 	struct timeval end;
 	gettimeofday(&end, 0); // start measure time
