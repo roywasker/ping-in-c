@@ -29,6 +29,7 @@ int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
 struct timeval start , end; 
 double timer=0; 
+struct timeval start;
 int firstmessping=0; //get value 1 when first message of ping arrive
 char message[45]={0};
 int sock;
@@ -44,6 +45,17 @@ int main(int count, char *argv[])
 {
     struct hostent *hname;
 	struct sockaddr_in addr;
+	char sourceIP[1] = { '\0' }; 
+    if ( count != 2 ) // check if we receive to where check connection
+    {
+        printf("usage: %s <addr> \n", argv[0]);
+        exit(0);
+    }
+	if(inet_pton(AF_INET, argv[1], sourceIP)<=0){ // check if the ip is correct
+			printf("%s is wrong ip\n",argv[1]);
+			exit(1);
+	}
+
     sock = socket(AF_INET, SOCK_STREAM, 0); // create socket
     if (sock == -1)
     {
@@ -71,13 +83,7 @@ int main(int count, char *argv[])
     printf("connected to server\n\n");
 
 	signal(SIGALRM, signal_handler);
-
-    if ( count != 2 ) // check if we receive to where check connection
-    {
-        printf("usage: %s <addr> \n", argv[0]);
-        exit(0);
-    }
-	if ( count == 2)
+	if ( count == 2 )
 	{
 		pid = getpid(); // get process id
 		proto = getprotobyname("ICMP");
@@ -86,33 +92,12 @@ int main(int count, char *argv[])
 		addr.sin_family = hname->h_addrtype;
 		addr.sin_port = 0;
 		addr.sin_addr.s_addr = *(long*)hname->h_addr;
-		if ( fork() == 0 )  
-		{
-			listener(sock); //listen to socket
-		}
-		else   
-		{
-			ping(&addr); //send ping
-		}
+		ping(&addr); //send ping
 		wait(0);
 	}
 	else
 		printf("usage: ping <hostname>\n");
-
-    /*char *args[2];
-    // compiled watchdog.c by makefile
-    args[0] = "./watchdog";
-    args[1] = NULL;
-    int status;
-    int pid = fork();
-    if (pid == 0)
-    {
-        printf("in child \n");
-        execvp(args[0], args);
-    }
-    wait(&status); // waiting for child to finish before exiting
-    printf("child exit status is: %d", status);*/
-
+		
     return 0;
 }
 unsigned short checksum(void *b, int len) //checksum to detection error
