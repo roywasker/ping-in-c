@@ -24,11 +24,11 @@ struct packet   //create new struct named packet
 int pid=-1; // process id
 struct protoent *proto=NULL; // pointer to protoent struct
 double timer=0; 
+struct timeval start;
 int firstmessping=0; //get value 1 when first message of ping arrive
 
 unsigned short checksum(void *b, int len);
 void display(void *buf, int bytes);
-void listener(void);
 void ping(struct sockaddr_in *addr);
 
 int main(int count, char *argv[])   
@@ -53,14 +53,7 @@ int main(int count, char *argv[])
 		addr.sin_family = hname->h_addrtype;
 		addr.sin_port = 0;
 		addr.sin_addr.s_addr = *(long*)hname->h_addr;
-		if ( fork() == 0 )  
-		{
-			listener(); //listen to socket
-		}
-		else   
-		{
-			ping(&addr); //send ping
-		}
+		ping(&addr); //send ping
 		wait(0);
 	}
 	else
@@ -98,46 +91,25 @@ void display(void *buf, int bytes)
     printf("%d bytes from %s: icmp_seq=%d ttl=%d time=%.03f ms\n",bytes-iphader,sourceIPAddrReadable,icmp->un.echo.sequence,ip->ttl,timer); //print ping massage with seq number, ttl 
 }																																	  //and how much time its take to receive
 
-void listener(void)
-{	
-	struct sockaddr_in addr; 
-	unsigned char buf[1024]; // buffer of 1024 char to read bytes
-
-	int sd = socket(AF_INET, SOCK_RAW, proto->p_proto); // create a socket 
-	if ( sd < 0 ) // check if socket create successfully
-	{
-		perror("socket");
-		exit(0);
-	}
-	while (1)
-	{
-		int len=sizeof(addr); 
-		bzero(buf, sizeof(buf)); // reset the buffer
-		struct timeval start; 
-		gettimeofday(&start,0); // start measure time
-		int bytes = recvfrom(sd, buf, sizeof(buf), 0, (struct sockaddr*)&addr, &len); // receive bytes from socket
-		struct timeval end; 
-		gettimeofday(&end,0); // start measure time
-		timer=(end.tv_sec - start.tv_sec)+(end.tv_usec-start.tv_usec)*1e-6;
-		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
-			display(buf, bytes);
-		else
-			perror("recvfrom");
-	}
-	exit(0);
-}
-
 void ping(struct sockaddr_in *addr)
 {	const int val=255;
 	int i, cnt=1; // cnt count seq number
 	struct packet pckt;
 	struct sockaddr_in r_addr;
+	struct sockaddr_in addrforrecv; 
+	unsigned char buf[1024]; // buffer of 1024 char to read bytes
 
 	int sd = socket(AF_INET, SOCK_RAW, proto->p_proto); //create a socket 
 	if ( sd < 0 ) // check if it first ping message enter if yes
 	{
 		perror("socket");
 		return;
+	}
+	int sdforrecv = socket(AF_INET, SOCK_RAW, proto->p_proto); // create a socket for receive
+	if ( sdforrecv < 0 ) 
+	{
+		perror("socket");
+		exit(0);
 	}
 	if (setsockopt(sd, SOL_IP, IP_TTL, &val, sizeof(val)) != 0) // cheack if the socket is free
 		perror("Set TTL option");
@@ -155,9 +127,20 @@ void ping(struct sockaddr_in *addr)
 		pckt.msg[i] = 0;
 		pckt.hdr.un.echo.sequence = cnt++;
 		pckt.hdr.checksum = checksum(&pckt, sizeof(pckt));
+		gettimeofday(&start,0); // start measure time
 		if ( sendto(sd, &pckt, sizeof(pckt), 0, (struct sockaddr*)addr, sizeof(*addr)) <= 0 ){ // send the packet 
 			perror("sendto");
         }
+		len=sizeof(addrforrecv); 
+		bzero(buf, sizeof(buf)); // reset the buffer
+		int bytes = recvfrom(sdforrecv, buf, sizeof(buf), 0, (struct sockaddr*)&addrforrecv, &len); // receive bytes from socket
+		struct timeval end; 
+		gettimeofday(&end,0); // start measure time
+		timer=(end.tv_sec - start.tv_sec) * 1000.0f + (end.tv_usec - start.tv_usec) / 1000.0f;
+		if ( bytes > 0 ) // if we get 1 or more bytes send to  display that print it
+			display(buf, bytes);
+		else
+			perror("recvfrom");
 		sleep(1); // wait 1 second to send next ping
 	}
 }
