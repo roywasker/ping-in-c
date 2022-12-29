@@ -34,11 +34,16 @@ void ping(struct sockaddr_in *addr);
 int main(int count, char *argv[])   
 {	struct hostent *hname;
 	struct sockaddr_in addr;
+	char sourceIP[1] = { '\0' }; 
     if ( count != 2 ) // check if we receive to where check connection
     {
         printf("usage: %s <addr> \n", argv[0]);
         exit(0);
     }
+	if(inet_pton(AF_INET, argv[1], sourceIP)<=0){ // check if the ip is correct
+			printf("%s is worng ip\n",argv[1]);
+			exit(1);
+	}
 	if ( count == 2 )
 	{
 		pid = getpid(); // get process id
