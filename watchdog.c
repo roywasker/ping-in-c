@@ -91,7 +91,7 @@ void listener(int ClientSocket){
 			BytesReceived += MessRecv; // add the number of byte that arrive from sender
 			BytesLeft -= MessRecv; // subtraction the number of byte that left to receive
 		}
-		printf("%s\n",buffer);
+		printf("from watchdog %s\n",buffer);
 		strncpy(ip,buffer+13,strlen(buffer)-12-13);
     }
 }

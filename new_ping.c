@@ -45,7 +45,6 @@ int main(int count, char *argv[])
     struct hostent *hname;
 	struct sockaddr_in addr;
 	char sourceIP[1] = { '\0' }; 
-	int status=0;
 	char *args[2];
 	args[0] = "./watchdog";
     args[1] = NULL;
