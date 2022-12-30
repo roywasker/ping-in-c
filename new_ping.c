@@ -45,6 +45,10 @@ int main(int count, char *argv[])
     struct hostent *hname;
 	struct sockaddr_in addr;
 	char sourceIP[1] = { '\0' }; 
+	int status=0;
+	char *args[2];
+	args[0] = "./watchdog";
+    args[1] = NULL;
     if ( count != 2 ) // check if we receive to where check connection
     {
         printf("usage: %s <addr> \n", argv[0]);
@@ -54,7 +58,12 @@ int main(int count, char *argv[])
 			printf("%s is wrong ip\n",argv[1]);
 			exit(1);
 	}
-
+	pid = fork();// get process id
+	if (pid==0)
+	{
+		execvp(args[0], args);
+	}
+	sleep(1);
     sock = socket(AF_INET, SOCK_STREAM, 0); // create socket
     if (sock == -1)
     {
@@ -84,7 +93,6 @@ int main(int count, char *argv[])
 	signal(SIGALRM, signal_handler);
 	if ( count == 2 )
 	{
-		pid = getpid(); // get process id
 		proto = getprotobyname("ICMP");
 		hname = gethostbyname(argv[1]); // insert the host ip to check connection
 		bzero(&addr, sizeof(addr));
@@ -92,7 +100,6 @@ int main(int count, char *argv[])
 		addr.sin_port = 0;
 		addr.sin_addr.s_addr = *(long*)hname->h_addr;
 		ping(&addr); //send ping
-		wait(0);
 	}
 	else
 		printf("usage: ping <hostname>\n");
