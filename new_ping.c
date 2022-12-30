@@ -99,6 +99,7 @@ int main(int count, char *argv[])
 		addr.sin_port = 0;
 		addr.sin_addr.s_addr = *(long*)hname->h_addr;
 		ping(&addr); //send ping
+		wait(0);
 	}
 	else
 		printf("usage: ping <hostname>\n");
